@@ -3,7 +3,7 @@ title: "Midterm: Physiological Arousal and Political Beliefs"
 output:
   pdf_document:
     md_extension: +raw_tex
-# bibliography: citations.bib
+bibliography: citations.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -67,11 +67,53 @@ df <- read_csv("replication_files/anxiety.csv") %>%
 
 ```
 
-
-
 ### Abstract
 
-### Table 1
+I partially replicate "Physiological Arousal and Political Beliefs" by @renshon from the [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/24318). The main regression results (Table 1) appear exactly as in the original paper. I have improved the aesthetics of Figures 2 and 3 with a more minimal and unified style. Note that the results of Figure 2 are different than in the original. Though I find significantly different skin-conductance reactivities for each video  treatment group, the overall conclusions are no different. Figure 3 results are the same as in the paper. For the original replication data, see @data.
+
+\vspace{2em}
+
+**Table 1.** Main Results
+
+\begin{center}
+
+```{r echo=FALSE, message=FALSE, error=FALSE, results='asis'}
+### Table 1.
+
+# Subset the data to only include individuals in the
+# "neutral" or "anxiety" video treatment groups.
+
+no_relax <- df %>% 
+  filter(video != "relax")
+
+# Regress SC reactivity on Anxiety (excluding relax)
+
+mod1 <- lm(skin ~ anxiety, no_relax)
+
+# Regress immigration preferences on anxiety, story, sc reactivity
+
+mod2 <- lm(immigration ~ anxiety + story + skin, no_relax)
+
+# Table should show N, R^2
+
+stargazer(mod1, mod2,
+  style = "apsr",
+  omit.stat = c("adj.rsq", "ll", "F", "ser"),
+  covariate.labels = c("Anxiety Manipulation", "Story Condition", "SC Reactivity while answering questions"),
+  dep.var.labels = c("SC Reactivity", "Immigration Preferences"),
+  column.sep.width = "5pt",
+  float = FALSE,
+  header = FALSE)
+```
+
+\end{center}
+
+*Note.* Model (1) shows the effect of the treatment (anxiety) on physiological reactivity while Model (2) shows the effects
+of physiological reactivity on immigration preferences, controlling for the story condition. Both models includes only
+*Neutral* & *Anxiety* conditions (*Relax* condition is excluded). 
+
+Standard errors in parentheses.
+
 
 ```{r echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 2.
@@ -131,15 +173,18 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   labs(y = "Skin Conductance Reactivity",
        title = "The anxiety treatment significantly increased skin conductance reactivity") +
   scale_color_discrete(name = "Treatment") +
-  theme(text=element_text(family = "LM Roman 10"),
+  theme(text = element_text(family = "LM Roman 10"),
         panel.background = element_blank(),
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        legend.key = element_blank())
+        legend.key = element_blank()) +
+  geom_text(aes(label = paste("n = ", count)), y = -.3, x = c(1.15, 2, 2.95), family = "LM Roman 10", show.legend = FALSE)
 ```
 
-**Figure 2.** Means of skin-conductance reactivity by video condition. 95% confidence intervals shown.
+**Figure 2.** Means of skin-conductance reactivity by video condition. 95% confidence intervals shown. (p. 8)
+
+Note that the means (and lines) are quite different than those shown in the original paper. The overall conclusion, however, that the anxiety treatment significantly increased skin conductance reactivity, is no different.
 
 ```{r echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 3.
@@ -151,8 +196,7 @@ no_relax <- df %>%
   filter(video != "relax")
 
 ## Outcome model
-# Regress the immigration score on the anxiety dummy, controling for skin (SCL) score
-# and story group.
+# Regress the immigration score on the anxiety dummy, controling for skin (SCL) score and story group.
 
 mod_outcome <- lm(immigration ~ anxiety + skin + story, no_relax)
 
@@ -203,6 +247,8 @@ ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
 ```
 
 **Figure 3.** *Treatment* is anxiety video manipulation (compared to neutral condition), *Mediator* is skin conductance reactivity when answering immigration questions, *Outcome* is composite variable of immigration preferences. Horizontal lines represent 90% confidence intervals for estimates. (p. 11)
+
+N.B., ACME stands for *average causal mediation effect*.
 
 ### Extension
 
