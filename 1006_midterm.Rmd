@@ -1,0 +1,42 @@
+---
+title: "Midterm: Physiological Arousal and Political Beliefs"
+output:
+  pdf_document:
+    md_extension: +raw_tex
+# bibliography: citations.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(foreign)
+library(plyr)
+library(reshape)
+library(sandwich)
+library(maps)
+library(stargazer)
+library(AER)
+library(Formula)
+library(lme4)
+library(cem)
+library(latticeExtra)
+library(stringr)
+library(bookdown)
+```
+
+\begin{flushright}
+Gabe Walker
+
+March 6, 2019
+\end{flushright}
+
+### Abstract
+
+
+### Figures 2 and 3, Table 1
+
+
+### Extension
+
+
+### References
