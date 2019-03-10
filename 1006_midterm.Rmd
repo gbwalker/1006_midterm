@@ -7,6 +7,10 @@ bibliography: citations.bib
 ---
 
 ```{r setup, include=FALSE}
+# Replication of "Physiological Arousal and Political Beliefs"
+# Published in Political Psychology (2014)
+# Original authors: Jonathan Renshon, Julia Lee, and Dustin Tingley
+
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(stargazer)
@@ -18,10 +22,6 @@ library(extrafont)
 library(rstanarm)
 library(janitor)
 library(bayesplot)
-
-# Replication of "Physiological Arousal and Political Beliefs"
-# Published in Political Psychology (2014)
-# Original authors: Jonathan Renshon, Julia Lee, and Dustin Tingley
 ```
 
 \begin{flushright}
@@ -32,12 +32,13 @@ March 16, 2019
 
 ```{r data, echo=FALSE, message=FALSE, error=FALSE}
 
-# Read in the replication file provided on the Harvard Dataverse.
+# Read in the replication file provided on the Harvard Dataverse:
 # https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/24318
 
 df <- read_csv("replication_files/anxiety.csv") %>%
 
-  # Remove the two observations who have a lot of missing data.
+  # Remove the two individuals who have a lot of missing data.
+  # This results in 138 observations as written in the paper.
 
   filter(!{
     is.na(income) & is.na(education)
@@ -72,11 +73,13 @@ df <- read_csv("replication_files/anxiety.csv") %>%
 
 ### Abstract
 
-I partially replicate "Physiological Arousal and Political Beliefs" by @renshon from the [Harvard Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/24318). The main regression results (Table 1) appear exactly as in the original paper. I have improved the aesthetics of Figures 2 and 3 with a more minimal and unified style. Note that the results of Figure 2 are different than in the original. Though I find significantly different skin-conductance reactivities for each video  treatment group, the overall conclusions are no different. Figure 3 results are the same as in the paper. For the original replication data, see @data.
+I partially replicate "Physiological Arousal and Political Beliefs" by @renshon. The main regression results (Table 1) appear exactly as in the original paper. I have improved the aesthetics of Figures 2 and 3 with a more minimal and unified style. Note that the results of Figure 2 are different than in the original. Though I find significantly different skin-conductance reactivities for each video  treatment group, the overall conclusions are no different. Figure 3 results are the same as in the paper. For the original replication data, see @data.
+
+In my extension I attempt to confirm the main results of the paper using Bayesian linear models. I find that the new models produce findings equivalent to the original ones, which lends credence to the authors' argument that physiological reactivity mediates the relationship between induced anxiety and attitudes toward immigrants.
 
 \vspace{2em}
 
-**Table 1.** Main Results
+**Table 1.** Main Results: Physiological reactivity mediates the relationship between induced anxiety and attitudes toward immigrants.
 
 \begin{center}
 
@@ -89,15 +92,16 @@ I partially replicate "Physiological Arousal and Political Beliefs" by @renshon 
 no_relax <- df %>%
   filter(video != "relax")
 
-# Regress SC reactivity on Anxiety (excluding relax)
+# Regress SC reactivity on Anxiety, excluding the relax video group.
 
 mod1 <- lm(skin ~ anxiety, no_relax)
 
-# Regress immigration preferences on anxiety, story, sc reactivity
+# Regress immigration preferences on anxiety, story, and SC reactivity.
 
 mod2 <- lm(immigration ~ anxiety + story + skin, no_relax)
 
-# Table should show N, R^2
+# Display the results of the two models with
+# total number of participants and R^2.
 
 stargazer(mod1, mod2,
   style = "apsr",
@@ -113,11 +117,12 @@ stargazer(mod1, mod2,
 \end{center}
 
 *Note.* Model (1) shows the effect of the treatment (anxiety) on physiological reactivity while Model (2) shows the effects
-of physiological reactivity on immigration preferences, controlling for the story condition. Both models includes only
-*Neutral* & *Anxiety* conditions (*Relax* condition is excluded). 
+of physiological reactivity on immigration preferences, controlling for the story condition. Both models include only
+*Neutral* & *Anxiety* conditions (the *Relax* condition is excluded). 
 
 Standard errors in parentheses.
 
+Note that a higher coefficients correspond to *less* favorable views on immigration.
 
 ```{r figure2, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 2.
@@ -141,11 +146,15 @@ anxiety <- df %>%
 # confidence intervals, and counts for the "skin"
 # variable for each group
 
-# Find the means of each group.
+# Find the means of each group, which will
+# be used as the center points of the confidence
+# intervals.
 
 means <- c(mean(relax$skin), mean(neutral$skin), mean(anxiety$skin))
 
-# Find the confidence interval sizes for each group.
+# Find the confidence interval sizes for each group, i.e.,
+# the distance above and below the mean that the confidence
+# interval stretches.
 
 ci_relax <- 1.96 * sd(relax$skin) / sqrt(length(relax$skin))
 ci_neutral <- 1.96 * sd(neutral$skin) / sqrt(length(neutral$skin))
@@ -167,7 +176,10 @@ f2 <- tibble(
   x = c(1, 2, 3)
 )
 
-# Plot the result.
+# Plot the result. This figure includes a title that
+# summarizes the main findings of the figure, color-codes
+# the treatment effect, and shows which of the confidence
+# intervals overlaps with zero.
 
 ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   geom_segment(aes(x = x, y = lower, xend = x, yend = upper), size = .75) +
@@ -175,8 +187,8 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   geom_point(size = 2.5, col = "white") +
   geom_point(aes(col = treatment), size = 1.5) +
   labs(
-    y = "Skin Conductance Reactivity",
-    title = "The anxiety treatment significantly increased skin conductance reactivity"
+    y = "Skin Conductance Reactivity (standardized units)",
+    title = "The anxiety treatment significantly increased \n skin conductance reactivity."
   ) +
   scale_color_discrete(name = "Treatment") +
   theme(
@@ -190,18 +202,12 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   geom_text(aes(label = paste("n = ", count)), y = -.3, x = c(1.15, 2, 2.95), family = "LM Roman 10", show.legend = FALSE)
 ```
 
-**Figure 2.** Means of skin-conductance reactivity by video condition. 95% confidence intervals shown. (p. 8)
+**Figure 2.** Means of skin-conductance reactivity by video condition. 95% confidence intervals shown.
 
-Note that the means (and lines) are quite different than those shown in the original paper. The overall conclusion, however, that the anxiety treatment significantly increased skin conductance reactivity, is no different.
+Note that the means (and intervals) are quite different than those shown in the original paper. The overall conclusion, however, that the anxiety treatment significantly increased skin conductance reactivity, is no different.
 
 ```{r figure3, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 3.
-
-# Subset the data to only include individuals in the
-# "neutral" or "anxiety" video treatment groups.
-
-no_relax <- df %>%
-  filter(video != "relax")
 
 ## Outcome model
 # Regress the immigration score on the anxiety dummy, controling for skin (SCL) score and story group.
@@ -210,11 +216,14 @@ mod_outcome <- lm(immigration ~ anxiety + skin + story, no_relax)
 
 ## Mediator Model
 # Regress the skin (SCL) score on the anxiety dummy while controling for story group.
-# Note that this includes the "story" variable, which is not in the main results.
+# Note that this includes the "story" variable, which is not included in the main results.
 
 mod_mediator <- lm(skin ~ anxiety + story, no_relax)
 
 ## Mediation Analysis
+# This calculates the direct, indirect, and total effects with
+# 500 simulations (as in the original paper) and boostraps
+# the results for model validation.
 
 x <- mediate(mod_mediator,
   mod_outcome,
@@ -226,7 +235,9 @@ x <- mediate(mod_mediator,
   conf.level = .90
 )
 
-# Save the results to a plottable dataframe.
+# Save the results to a plottable dataframe that includes
+# the average estimate, lower and upper 90% confidence bounds,
+# and p values.
 
 f3 <- tibble(
   effect = c("ACME", "Direct Effect", "Total Effect"),
@@ -237,7 +248,8 @@ f3 <- tibble(
   y = c(1, 2, 3)
 )
 
-# Plot the result.
+# Plot the result. This plot shows the causal mediation effect of physiological
+# reactivity on the dependent variable (immigration beliefs).
 
 ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
   geom_segment(aes(x = lower, y = y, xend = upper, yend = y), size = .75) +
@@ -245,10 +257,12 @@ ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
   geom_point(aes(estimate), size = 2.5, col = "white") +
   geom_point(aes(estimate, col = effect), size = 1.5) +
   labs(
-    x = "Causal mediation effect",
-    title = "The indirect effect of physiological reactivity (ACME) is positive and significant"
+    x = "Causal mediation effect on immigration beliefs",
+    title = "The indirect effect of physiological reactivity (ACME) \n is positive and significant."
   ) +
   scale_color_discrete(name = "Effect") +
+  annotate("text", x = -.4, y = 1, label = "More negative beliefs >>>",
+           col = "black", alpha = .5, size = 4, family = "LM Roman 10") +
   theme(
     text = element_text(family = "LM Roman 10"),
     panel.background = element_blank(),
@@ -259,13 +273,15 @@ ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
   )
 ```
 
-**Figure 3.** *Treatment* is anxiety video manipulation (compared to neutral condition), *Mediator* is skin conductance reactivity when answering immigration questions, *Outcome* is composite variable of immigration preferences. Horizontal lines represent 90% confidence intervals for estimates. (p. 11)
+**Figure 3.** *Treatment* is the anxiety video manipulation (compared to the neutral condition), *Mediator* is skin conductance reactivity when answering immigration questions, and *Outcome* is composite variable of immigration preferences. Horizontal lines represent 90% confidence intervals around the mean estimates.
 
-N.B., ACME stands for *average causal mediation effect*.
+Note that ACME stands for *average causal mediation effect* and that higher coefficients correspond to less favorable views on immigration.
+
+\pagebreak
 
 ### Extension
 
-In this extension I perform 
+In this extension I attempt to confirm the main results of the paper using Bayesian linear models. I generally follow the guidelines provided in @gabry and add additional visualizations from the `bayesplot` package. The models here do reach the same general conclusions as those from the paper: the *Anxiety* treatment parameter is positive and significant in the first-stage model within a 90% confidence interval, and the skin conductance reactivity parameter is positive and significant in the second-stage model within a 95% confidence interval. This lends credence to the authors' argument that physiological reactivity mediates the relationship between induced anxiety and attitudes toward immigrants.
 
 ```{r extension_data, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE, results='hide'}
 ### Extension
@@ -273,21 +289,17 @@ In this extension I perform
 # Reproduce the main results but with a Bayesian model, using
 # the rstanarm package.
 
-# Subset the data to only include individuals in the
-# "neutral" or "anxiety" video treatment groups.
-
-no_relax <- df %>%
-  filter(video != "relax")
-
-# Regress SC reactivity on Anxiety (excluding relax)
+# Regress SC reactivity on Anxiety (excluding the relax group).
 
 mod1 <- stan_glm(skin ~ anxiety, no_relax, family = "gaussian")
 
-# Regress immigration preferences on anxiety, story, sc reactivity
+# Regress immigration preferences on anxiety, story, and SC reactivity.
 
 mod2 <- stan_glm(immigration ~ skin + anxiety + story, no_relax, family = "gaussian")
 
-# Posterior distributions.
+# Separate the posterior distributions for the parameters
+# so they can be plotted separately.
+# Clean the names for ease of use.
 
 draws1 <- as_tibble(mod1) %>%
   clean_names()
@@ -296,8 +308,11 @@ draws2 <- as_tibble(mod2) %>%
   clean_names()
 ```
 
-```{r extension1, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
-# First extension plot
+```{r xplot1, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
+# This extension plot shows the regression line generated from the mean (most likely)
+# parameter and coefficient values for anxiety treatment regressed on skin conductance.
+# It also graphs all the possible slope/intercept combinations from
+# the generated posterior distribution of the anxiety parameter.
 
 ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
   scale_color_manual(values = c("black", "firebrick1"), name = "Treatment", labels = c("Neutral", "Anxiety")) +
@@ -313,7 +328,7 @@ ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
   labs(
     x = "Video treatment",
     y = "Skin Conductance Reactivity",
-    title = "Anxiety treatment is associated with increased skin conductance reactivity"
+    title = "Anxiety treatment is associated with increased \n skin conductance reactivity."
   ) +
   theme(
     text = element_text(family = "LM Roman 10"),
@@ -324,33 +339,44 @@ ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
   )
 ```
 
-```{r mcmc, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=4, fig.height=3}
-mcmc_areas(draws1, prob = 0.90, pars = "anxiety1") +
-  labs(x = "Anxiety parameter value",
-       title = "Posterior distribution estimate of the anxiety parameter",
-       caption = "Median and 90% interval shown in blue.") +
-    theme(
+```{r xplot2, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=5, fig.height=2.5}
+# This plot shows the mean value and 90% confidence interval of the
+# anxiety treatment in the first model generated from the
+# posterior distribution. I choose 90% here to match with the results
+# shown in the original paper.
+
+mcmc_areas(draws1, prob = 0.90, pars = "anxiety1", point_est = "mean") +
+  labs(
+    x = "Anxiety parameter value",
+    title = "Posterior distribution estimate of anxiety parameter",
+    caption = "Mean and 90% interval shown in blue."
+  ) +
+  theme(
     text = element_text(family = "LM Roman 10"),
     panel.background = element_blank(),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank()
   ) +
-  geom_segment(aes(x = median(draws1$anxiety1), y = 0, xend = median(draws1$anxiety1), yend = 1), size = .25, linetype = "dashed") +
-  annotate("text", label = round(median(draws1$anxiety1), 3), x = median(draws1$anxiety1) - .1, y = .2, family = "LM Roman 10")
+  geom_segment(aes(x = mean(draws1$anxiety1), y = 0, xend = mean(draws1$anxiety1), yend = 1), size = .15, linetype = "dashed") +
+  annotate("text", label = round(mean(draws1$anxiety1), 3), x = mean(draws1$anxiety1) - .1, y = .2, family = "LM Roman 10")
 ```
 
-Write details about g1 here.
+Note that the *Anxiety* parameter value is positive and significant within a 90% confidence interval.
 
-```{r extension2, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
-# The second extension plot.
+```{r xplot3, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
+# This extension plot shows the regression line generated from the mean (most likely)
+# parameter and coefficient values for immigration opinions regressed on skin conductance
+# while holding video and story treatment constant.
+# It also graphs all the possible slope/intercept combinations from
+# the generated posterior distribution of the skin conductance parameter.
 
 ggplot(no_relax, aes(skin, immigration)) +
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) +
   labs(
     x = "Skin Conductance Reactivity",
     y = "Immigration views",
-    title = "Skin reactivity mediates views on immigration"
+    title = "Skin reactivity mediates views on immigration."
   ) +
   geom_abline(
     data = draws2, aes(intercept = intercept, slope = skin),
@@ -366,22 +392,31 @@ ggplot(no_relax, aes(skin, immigration)) +
   )
 ```
 
-```{r mcmc2, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=4, fig.height=3}
-mcmc_areas(draws2, prob = 0.95, pars = "skin") +
-  labs(x = "Skin conductance reactivity parameter value",
-       title = "Posterior distribution estimate of the skin conductance reactivity parameter",
-       caption = "Median and 95% interval shown in blue.") +
-    theme(
+```{r xplot4, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=5, fig.height=2.5}
+# This plot shows the mean value and 95% confidence interval of the
+# skin conductance parameter in the first model generated from the
+# posterior distribution. I choose 95% here to match with the results
+# shown in the original paper.
+
+mcmc_areas(draws2, prob = 0.95, pars = "skin", point_est = "mean") +
+  labs(
+    x = "Skin conductance reactivity parameter value",
+    title = "Posterior distribution of skin conductance parameter",
+    caption = "Mean and 95% interval shown in blue."
+  ) +
+  theme(
     text = element_text(family = "LM Roman 10"),
     panel.background = element_blank(),
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank()
   ) +
-  geom_segment(aes(x = median(draws2$skin), y = 0, xend = median(draws2$skin), yend = 1), size = .25, linetype = "dashed") +
-  annotate("text", label = round(median(draws2$skin), 3), x = median(draws2$skin) - .05, y = .3, family = "LM Roman 10")
+  geom_segment(aes(x = mean(draws2$skin), y = 0, xend = mean(draws2$skin), yend = 1), size = .15, linetype = "dashed") +
+  annotate("text", label = round(mean(draws2$skin), 3), x = mean(draws2$skin) + .05, y = .3, family = "LM Roman 10")
 ```
 
-Write details about g2 here.
+Note that the skin conductance reactivity parameter value is positive and significant within a 95% confidence interval. This Bayesian model had the same controls as that of the original, namely anxiety manipulation and story condition.
+
+\pagebreak
 
 ### References
