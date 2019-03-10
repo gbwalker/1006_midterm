@@ -15,10 +15,13 @@ library(bookdown)
 library(mediation)
 library(memisc)
 library(extrafont)
+library(rstanarm)
+library(janitor)
+library(bayesplot)
 
 # Replication of "Physiological Arousal and Political Beliefs"
 # Published in Political Psychology (2014)
-# Original authors: Jonathan Renshon, Julia Lee & Dustin Tingley
+# Original authors: Jonathan Renshon, Julia Lee, and Dustin Tingley
 ```
 
 \begin{flushright}
@@ -32,39 +35,39 @@ March 16, 2019
 # Read in the replication file provided on the Harvard Dataverse.
 # https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/24318
 
-df <- read_csv("replication_files/anxiety.csv") %>% 
-  
-# Remove the two observations who have a lot of missing data.
-  
-  filter(! {is.na(income) & is.na(education)}) %>% 
+df <- read_csv("replication_files/anxiety.csv") %>%
 
-# Rename and restructure variables for ease of understanding.
-# "video" refers to which video the subject was shown.
+  # Remove the two observations who have a lot of missing data.
+
+  filter(!{
+    is.na(income) & is.na(education)
+  }) %>%
+
+  # Rename and restructure variables for ease of understanding.
+  # "video" refers to which video the subject was shown.
 
   mutate(video = factor(case_when(
     anxcond3 == 0 ~ "relax",
     anxcond3 == 1 ~ "neutral",
     anxcond3 == 2 ~ "anxiety"
-  ))) %>% 
-  
-  dplyr::select(-anxcond3) %>% 
+  ))) %>%
+  dplyr::select(-anxcond3) %>%
 
-# "anxiety" is a dummy for whether the subject was shown the Cliffhanger clip.
-    
-  mutate(anxiety = factor(anxcond)) %>% 
-  dplyr::select(-anxcond) %>% 
+  # "anxiety" is a dummy for whether the subject was shown the Cliffhanger clip.
 
-# "skin" is the standardized skin-conductance level within each participant.
-# See the original paper (p. 7) for a detailed description of standardization.
+  mutate(anxiety = factor(anxcond)) %>%
+  dplyr::select(-anxcond) %>%
 
-  mutate(skin = SCDBradSelfReport1_mean) %>% 
-  dplyr::select(-SCDBradSelfReport1_mean) %>% 
+  # "skin" is the standardized skin-conductance level within each participant.
+  # See the original paper (p. 7) for a detailed description of standardization.
 
-# "story" is a random dummy for which immigration article the participants read.
-  
-  mutate(story = factor(storycond)) %>% 
+  mutate(skin = SCDBradSelfReport1_mean) %>%
+  dplyr::select(-SCDBradSelfReport1_mean) %>%
+
+  # "story" is a random dummy for which immigration article the participants read.
+
+  mutate(story = factor(storycond)) %>%
   dplyr::select(-storycond)
-
 ```
 
 ### Abstract
@@ -77,13 +80,13 @@ I partially replicate "Physiological Arousal and Political Beliefs" by @renshon 
 
 \begin{center}
 
-```{r echo=FALSE, message=FALSE, error=FALSE, results='asis'}
+```{r table1, echo=FALSE, message=FALSE, error=FALSE, results='asis'}
 ### Table 1.
 
 # Subset the data to only include individuals in the
 # "neutral" or "anxiety" video treatment groups.
 
-no_relax <- df %>% 
+no_relax <- df %>%
   filter(video != "relax")
 
 # Regress SC reactivity on Anxiety (excluding relax)
@@ -103,7 +106,8 @@ stargazer(mod1, mod2,
   dep.var.labels = c("SC Reactivity", "Immigration Preferences"),
   column.sep.width = "5pt",
   float = FALSE,
-  header = FALSE)
+  header = FALSE
+)
 ```
 
 \end{center}
@@ -115,7 +119,7 @@ of physiological reactivity on immigration preferences, controlling for the stor
 Standard errors in parentheses.
 
 
-```{r echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
+```{r figure2, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 2.
 
 # Make three data subsets for each treatment group.
@@ -160,7 +164,7 @@ f2 <- tibble(
   lower = lower,
   upper = upper,
   count = c(nrow(relax), nrow(neutral), nrow(anxiety)),
-  x = c(1,2,3)
+  x = c(1, 2, 3)
 )
 
 # Plot the result.
@@ -170,15 +174,19 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_point(size = 2.5, col = "white") +
   geom_point(aes(col = treatment), size = 1.5) +
-  labs(y = "Skin Conductance Reactivity",
-       title = "The anxiety treatment significantly increased skin conductance reactivity") +
+  labs(
+    y = "Skin Conductance Reactivity",
+    title = "The anxiety treatment significantly increased skin conductance reactivity"
+  ) +
   scale_color_discrete(name = "Treatment") +
-  theme(text = element_text(family = "LM Roman 10"),
-        panel.background = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.key = element_blank()) +
+  theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.key = element_blank()
+  ) +
   geom_text(aes(label = paste("n = ", count)), y = -.3, x = c(1.15, 2, 2.95), family = "LM Roman 10", show.legend = FALSE)
 ```
 
@@ -186,13 +194,13 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
 
 Note that the means (and lines) are quite different than those shown in the original paper. The overall conclusion, however, that the anxiety treatment significantly increased skin conductance reactivity, is no different.
 
-```{r echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
+```{r figure3, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE}
 ### Figure 3.
 
 # Subset the data to only include individuals in the
 # "neutral" or "anxiety" video treatment groups.
 
-no_relax <- df %>% 
+no_relax <- df %>%
   filter(video != "relax")
 
 ## Outcome model
@@ -208,14 +216,15 @@ mod_mediator <- lm(skin ~ anxiety + story, no_relax)
 
 ## Mediation Analysis
 
-x <- mediate(mod_mediator, 
-                     mod_outcome, 
-                     sims = 500, 
-                     treat = "anxiety", 
-                     mediator = "skin", 
-                     dropobs = TRUE, 
-                     boot = TRUE, 
-                     conf.level = .90)
+x <- mediate(mod_mediator,
+  mod_outcome,
+  sims = 500,
+  treat = "anxiety",
+  mediator = "skin",
+  dropobs = TRUE,
+  boot = TRUE,
+  conf.level = .90
+)
 
 # Save the results to a plottable dataframe.
 
@@ -225,7 +234,7 @@ f3 <- tibble(
   lower = c(x$d.avg.ci[[1]], x$z.avg.ci[[1]], x$tau.ci[[1]]),
   upper = c(x$d.avg.ci[[2]], x$z.avg.ci[[2]], x$tau.ci[[2]]),
   pval = c(x$d.avg.p, x$z.avg.p, x$tau.p),
-  y = c(1,2,3)
+  y = c(1, 2, 3)
 )
 
 # Plot the result.
@@ -235,15 +244,19 @@ ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   geom_point(aes(estimate), size = 2.5, col = "white") +
   geom_point(aes(estimate, col = effect), size = 1.5) +
-  labs(x = "Causal mediation effect",
-       title = "The indirect effect of physiological reactivity (ACME) is positive and significant") +
+  labs(
+    x = "Causal mediation effect",
+    title = "The indirect effect of physiological reactivity (ACME) is positive and significant"
+  ) +
   scale_color_discrete(name = "Effect") +
-  theme(text=element_text(family = "LM Roman 10"),
-        panel.background = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        legend.key = element_blank())
+  theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.key = element_blank()
+  )
 ```
 
 **Figure 3.** *Treatment* is anxiety video manipulation (compared to neutral condition), *Mediator* is skin conductance reactivity when answering immigration questions, *Outcome* is composite variable of immigration preferences. Horizontal lines represent 90% confidence intervals for estimates. (p. 11)
@@ -252,5 +265,123 @@ N.B., ACME stands for *average causal mediation effect*.
 
 ### Extension
 
+In this extension I perform 
+
+```{r extension_data, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE, results='hide'}
+### Extension
+
+# Reproduce the main results but with a Bayesian model, using
+# the rstanarm package.
+
+# Subset the data to only include individuals in the
+# "neutral" or "anxiety" video treatment groups.
+
+no_relax <- df %>%
+  filter(video != "relax")
+
+# Regress SC reactivity on Anxiety (excluding relax)
+
+mod1 <- stan_glm(skin ~ anxiety, no_relax, family = "gaussian")
+
+# Regress immigration preferences on anxiety, story, sc reactivity
+
+mod2 <- stan_glm(immigration ~ skin + anxiety + story, no_relax, family = "gaussian")
+
+# Posterior distributions.
+
+draws1 <- as_tibble(mod1) %>%
+  clean_names()
+
+draws2 <- as_tibble(mod2) %>%
+  clean_names()
+```
+
+```{r extension1, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
+# First extension plot
+
+ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
+  scale_color_manual(values = c("black", "firebrick1"), name = "Treatment", labels = c("Neutral", "Anxiety")) +
+  geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) +
+  geom_abline(
+    data = draws1, aes(intercept = intercept, slope = anxiety1),
+    color = "skyblue", size = 0.1, alpha = 0.05
+  ) +
+  geom_abline(
+    intercept = coef(mod1)[1], slope = coef(mod1)[2],
+    color = "deepskyblue4", size = 1
+  ) +
+  labs(
+    x = "Video treatment",
+    y = "Skin Conductance Reactivity",
+    title = "Anxiety treatment is associated with increased skin conductance reactivity"
+  ) +
+  theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+```{r mcmc, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=4, fig.height=3}
+mcmc_areas(draws1, prob = 0.90, pars = "anxiety1") +
+  labs(x = "Anxiety parameter value",
+       title = "Posterior distribution estimate of the anxiety parameter",
+       caption = "Median and 90% interval shown in blue.") +
+    theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  geom_segment(aes(x = median(draws1$anxiety1), y = 0, xend = median(draws1$anxiety1), yend = 1), size = .25, linetype = "dashed") +
+  annotate("text", label = round(median(draws1$anxiety1), 3), x = median(draws1$anxiety1) - .1, y = .2, family = "LM Roman 10")
+```
+
+Write details about g1 here.
+
+```{r extension2, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, cache=TRUE}
+# The second extension plot.
+
+ggplot(no_relax, aes(skin, immigration)) +
+  geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) +
+  labs(
+    x = "Skin Conductance Reactivity",
+    y = "Immigration views",
+    title = "Skin reactivity mediates views on immigration"
+  ) +
+  geom_abline(
+    data = draws2, aes(intercept = intercept, slope = skin),
+    color = "skyblue", size = 0.1, alpha = 0.05
+  ) +
+  geom_abline(
+    intercept = coef(mod2)[1], slope = coef(mod2)[2],
+    color = "skyblue4", size = 1
+  ) +
+  theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank()
+  )
+```
+
+```{r mcmc2, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE, fig.align='center', fig.width=4, fig.height=3}
+mcmc_areas(draws2, prob = 0.95, pars = "skin") +
+  labs(x = "Skin conductance reactivity parameter value",
+       title = "Posterior distribution estimate of the skin conductance reactivity parameter",
+       caption = "Median and 95% interval shown in blue.") +
+    theme(
+    text = element_text(family = "LM Roman 10"),
+    panel.background = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  geom_segment(aes(x = median(draws2$skin), y = 0, xend = median(draws2$skin), yend = 1), size = .25, linetype = "dashed") +
+  annotate("text", label = round(median(draws2$skin), 3), x = median(draws2$skin) - .05, y = .3, family = "LM Roman 10")
+```
+
+Write details about g2 here.
 
 ### References
