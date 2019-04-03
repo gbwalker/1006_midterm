@@ -37,6 +37,8 @@ March 16, 2019
 
 df <- read_csv("replication_files/anxiety.csv") %>%
 
+Really good to document handling of missing data. Nice.
+
   # Remove the two individuals who have a lot of missing data.
   # This results in 138 observations as written in the paper.
 
@@ -46,6 +48,8 @@ df <- read_csv("replication_files/anxiety.csv") %>%
 
   # Rename and restructure variables for ease of understanding.
   # "video" refers to which video the subject was shown.
+  
+  Also a great choice. Really helpful for future you and anyone who tries to replicate
 
   mutate(video = factor(case_when(
     anxcond3 == 0 ~ "relax",
@@ -61,6 +65,9 @@ df <- read_csv("replication_files/anxiety.csv") %>%
 
   # "skin" is the standardized skin-conductance level within each participant.
   # See the original paper (p. 7) for a detailed description of standardization.
+  
+  There were 2 measures of skin conductivity, SCDBradVidManipAll_mean and SCDBradSelfReport1_mean.
+  This is why your replication of figure two below is slightly off.
 
   mutate(skin = SCDBradSelfReport1_mean) %>%
   dplyr::select(-SCDBradSelfReport1_mean) %>%
@@ -70,12 +77,15 @@ df <- read_csv("replication_files/anxiety.csv") %>%
   mutate(story = factor(storycond)) %>%
   dplyr::select(-storycond)
 ```
+Nice reformatting/manipulation of the data
 
 ### Abstract
 
 I partially replicate "Physiological Arousal and Political Beliefs" by @renshon. The main regression results (Table 1) appear exactly as in the original paper. I have improved the aesthetics of Figures 2 and 3 with a more minimal and unified style. Note that the results of Figure 2 are different than in the original. Though I find significantly different skin-conductance reactivities for each video  treatment group, the overall conclusions are no different. Figure 3 results are the same as in the paper. For the original replication data, see @data.
 
 In my extension I attempt to confirm the main results of the paper using Bayesian linear models. I find that the new models produce findings equivalent to the original ones, which lends credence to the authors' argument that physiological reactivity mediates the relationship between induced anxiety and attitudes toward immigrants.
+
+Great abstract. Thorough and informative.
 
 \vspace{2em}
 
@@ -113,6 +123,8 @@ stargazer(mod1, mod2,
   header = FALSE
 )
 ```
+Excellent replication of Table 1. Your footnotes make it clearer than what is in the published paper. Your comments that 
+explain what is going on are really helpful.
 
 \end{center}
 
@@ -201,6 +213,8 @@ ggplot(f2, aes(x, mean, group = treatment, col = treatment)) +
   ) +
   geom_text(aes(label = paste("n = ", count)), y = -.3, x = c(1.15, 2, 2.95), family = "LM Roman 10", show.legend = FALSE)
 ```
+Really nice looking plot. Labels/colors are great. As I said above, you wanted to use SCDBradVidManipAll_mean here to get the
+numbers that they report in the paper. Not a huge deal though.
 
 **Figure 2.** Means of skin-conductance reactivity by video condition. 95% confidence intervals shown.
 
@@ -224,6 +238,8 @@ mod_mediator <- lm(skin ~ anxiety + story, no_relax)
 # This calculates the direct, indirect, and total effects with
 # 500 simulations (as in the original paper) and boostraps
 # the results for model validation.
+
+great explanations of what's going on here. Really useful for you and the reader.
 
 x <- mediate(mod_mediator,
   mod_outcome,
@@ -277,6 +293,8 @@ ggplot(f3, aes(estimate, y, group = effect, col = effect)) +
 
 Note that ACME stands for *average causal mediation effect* and that higher coefficients correspond to less favorable views on immigration.
 
+Good explanation and excellent plot. 
+
 \pagebreak
 
 ### Extension
@@ -314,6 +332,9 @@ draws2 <- as_tibble(mod2) %>%
 # It also graphs all the possible slope/intercept combinations from
 # the generated posterior distribution of the anxiety parameter.
 
+The comment above is probably something you want to include written in your report. That way it's clear to the reader what is going on
+and there is no guessing about what your figure is showing. Something to keep in mind for final project/paper.
+
 ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
   scale_color_manual(values = c("black", "firebrick1"), name = "Treatment", labels = c("Neutral", "Anxiety")) +
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) +
@@ -344,6 +365,8 @@ ggplot(no_relax, aes(anxiety, skin, col = anxiety)) +
 # anxiety treatment in the first model generated from the
 # posterior distribution. I choose 90% here to match with the results
 # shown in the original paper.
+
+Same as above. Definitely want this in the report so it's clear what's going on. 
 
 mcmc_areas(draws1, prob = 0.90, pars = "anxiety1", point_est = "mean") +
   labs(
@@ -416,6 +439,9 @@ mcmc_areas(draws2, prob = 0.95, pars = "skin", point_est = "mean") +
 ```
 
 Note that the skin conductance reactivity parameter value is positive and significant within a 95% confidence interval. This Bayesian model had the same controls as that of the original, namely anxiety manipulation and story condition.
+
+Nice extension overall. The plots provide some nice visuals that add to the claims made in the paper. As said above, you want to say more about your plots in your report so someone who is reading it without seeing the comments knows exactly what's going on
+and what each figure means. Nice job!
 
 \pagebreak
 
